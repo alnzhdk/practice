@@ -1,0 +1,75 @@
+package com.example.projector;
+
+import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+import java.util.List;
+
+public class ProjectAdapter extends RecyclerView.Adapter<ProjectAdapter.ViewHolder> {
+    private Context context;
+    private List<Project> projectList;
+
+    public ProjectAdapter(Context context, List<Project> projectList) {
+        this.context = context;
+        this.projectList = projectList;
+    }
+
+    @NonNull
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(context)
+                .inflate(R.layout.project_item, parent, false);
+        return new ViewHolder(view);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        Project project = projectList.get(position);
+
+        holder.tvName.setText(project.getName());
+        holder.tvDescription.setText(project.getDescription());
+        holder.tvStatus.setText("Статус: " + project.getStatus());
+        holder.tvDates.setText(project.getFormattedStartDate() + " - " + project.getFormattedEndDate());
+        holder.tvProgress.setText("Прогресс: " + project.getProgress() + "%");
+
+        holder.itemView.setOnClickListener(v -> {
+            AddProjectDialog dialog = new AddProjectDialog(context, () -> {
+                if (context instanceof MainActivity) {
+                    ((MainActivity) context).refreshProjects();
+                }
+            }, project);
+            dialog.show();
+        });
+
+        holder.itemView.setOnLongClickListener(v -> {
+            ProjectDBHelper dbHelper = new ProjectDBHelper(context);
+            dbHelper.deleteProject(project.getId());
+            if (context instanceof MainActivity) {
+                ((MainActivity) context).refreshProjects();
+            }
+            return true;
+        });
+    }
+
+    @Override
+    public int getItemCount() {
+        return projectList.size();
+    }
+
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        TextView tvName, tvDescription, tvStatus, tvDates, tvProgress;
+
+        public ViewHolder(@NonNull View itemView) {
+            super(itemView);
+            tvName = itemView.findViewById(R.id.tvName);
+            tvDescription = itemView.findViewById(R.id.tvDescription);
+            tvStatus = itemView.findViewById(R.id.tvStatus);
+            tvDates = itemView.findViewById(R.id.tvDates);
+            tvProgress = itemView.findViewById(R.id.tvProgress);
+        }
+    }
+}
