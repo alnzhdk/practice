@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Projector</string>
+
+    <string name="btn_save">Сохранить</string>
+    <string name="btn_cancel">Отмена</string>
+
+    <string name="label_project_name">Название проекта</string>
+    <string name="hint_project_name">Введите название</string>
+
+    <string name="label_description">Описание</string>
+    <string name="hint_description">Введите описание</string>
+
+    <string name="label_status">Статус</string>
+
+    <string name="label_start_date">Дата начала (дд.мм.гггг)</string>
+    <string name="hint_start_date">01.01.2024</string>
+
+    <string name="label_end_date">Дата окончания (дд.мм.гггг)</string>
+    <string name="hint_end_date">31.12.2024</string>
+
+    <string name="label_progress">Прогресс (0-100%)</string>
+    <string name="hint_progress">0</string>
+</resources>
+
