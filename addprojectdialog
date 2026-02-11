@@ -1,0 +1,172 @@
+package com.example.projector;
+
+import android.app.AlertDialog;
+import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.Toast;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+
+public class AddProjectDialog {
+    private Context context;
+    private Runnable refreshCallback;
+    private Project project;
+    private AlertDialog dialog;
+
+    public AddProjectDialog(Context context, Runnable refreshCallback) {
+        this(context, refreshCallback, null);
+    }
+
+    public AddProjectDialog(Context context, Runnable refreshCallback, Project project) {
+        this.context = context;
+        this.refreshCallback = refreshCallback;
+        this.project = project;
+        showDialog();
+    }
+
+    private void showDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        LayoutInflater inflater = LayoutInflater.from(context);
+        View view = inflater.inflate(R.layout.dialog_add_project, null);
+
+        EditText etName = view.findViewById(R.id.etName);
+        EditText etDescription = view.findViewById(R.id.etDescription);
+        Spinner spinnerStatus = view.findViewById(R.id.spinnerStatus);
+        EditText etStartDate = view.findViewById(R.id.etStartDate);
+        EditText etEndDate = view.findViewById(R.id.etEndDate);
+        EditText etProgress = view.findViewById(R.id.etProgress);
+        Button btnSave = view.findViewById(R.id.btnSave);
+        Button btnCancel = view.findViewById(R.id.btnCancel);
+
+        if (project != null) {
+            etName.setText(project.getName());
+            etDescription.setText(project.getDescription());
+
+            // Установка статуса в спиннере
+            String[] statusArray = context.getResources().getStringArray(R.array.status_array);
+            for (int i = 0; i < statusArray.length; i++) {
+                if (statusArray[i].equals(project.getStatus())) {
+                    spinnerStatus.setSelection(i);
+                    break;
+                }
+            }
+
+            etStartDate.setText(project.getFormattedStartDate());
+            etEndDate.setText(project.getFormattedEndDate());
+            etProgress.setText(String.valueOf(project.getProgress()));
+        }
+
+        // Валидация даты
+        etStartDate.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus && !etStartDate.getText().toString().isEmpty()) {
+                if (!isValidDate(etStartDate.getText().toString())) {
+                    etStartDate.setError("Формат даты: дд.мм.гггг");
+                }
+            }
+        });
+
+        etEndDate.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus && !etEndDate.getText().toString().isEmpty()) {
+                if (!isValidDate(etEndDate.getText().toString())) {
+                    etEndDate.setError("Формат даты: дд.мм.гггг");
+                }
+            }
+        });
+        btnSave.setOnClickListener(v -> {
+            String name = etName.getText() != null ? etName.getText().toString().trim() : "";
+            String description = etDescription.getText() != null ? etDescription.getText().toString().trim() : "";
+
+            // безопасное получение выбранного элемента у Spinner
+            Object selected = spinnerStatus != null ? spinnerStatus.getSelectedItem() : null;
+            String status = selected != null ? selected.toString() : "";
+
+            String startDate = etStartDate.getText() != null ? etStartDate.getText().toString().trim() : "";
+            String endDate = etEndDate.getText() != null ? etEndDate.getText().toString().trim() : "";
+            String progressStr = etProgress.getText() != null ? etProgress.getText().toString().trim() : "";
+
+            if (name.isEmpty()) {
+                etName.setError("Введите название");
+                return;
+            }
+
+            int progress = 0;
+            try {
+                progress = Integer.parseInt(progressStr);
+                if (progress < 0 || progress > 100) {
+                    etProgress.setError("Введите число от 0 до 100");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                etProgress.setError("Введите число");
+                return;
+            }
+
+            // ... остальной код сохранения (как у вас)
+
+        ProjectDBHelper dbHelper = new ProjectDBHelper(context);
+            Project newProject = new Project();
+
+            if (project != null) {
+                newProject.setId(project.getId());
+            }
+
+            newProject.setName(name);
+            newProject.setDescription(description);
+            newProject.setStatus(status);
+            newProject.setProgress(progress);
+
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault());
+                if (!startDate.isEmpty()) {
+                    newProject.setStartDate(sdf.parse(startDate));
+                }
+                if (!endDate.isEmpty()) {
+                    newProject.setEndDate(sdf.parse(endDate));
+                }
+            } catch (Exception e) {
+                Toast.makeText(context, "Ошибка формата даты", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (project == null) {
+                dbHelper.addProject(newProject);
+                Toast.makeText(context, "Проект добавлен", Toast.LENGTH_SHORT).show();
+            } else {
+                dbHelper.updateProject(newProject);
+                Toast.makeText(context, "Проект обновлен", Toast.LENGTH_SHORT).show();
+            }
+
+            dialog.dismiss();
+            if (refreshCallback != null) {
+                refreshCallback.run();
+            }
+        });
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        builder.setView(view);
+        dialog = builder.create();
+        dialog.show();
+    }
+
+    private boolean isValidDate(String date) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault());
+            sdf.setLenient(false);
+            sdf.parse(date);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public void show() {
+        if (dialog != null) {
+            dialog.show();
+        }
+    }
+}
